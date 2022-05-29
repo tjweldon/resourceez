@@ -1,14 +1,8 @@
 [tool.poetry]
-name = "resourceez-tjweldon"
+name = "resourceez"
 version = "0.1.0"
 description = "A slim package for declaratively expressing, serialising and deserialising REST resources."
-long_description = file: README.md
-long_description_content_type = text/markdown
 authors = ["tjweldon <tomd90@gmail.com>"]
-classifiers =
-    Programming Language :: Python :: 3
-    License :: OSI Approved :: The Unlicense (Unlicense)
-    Operating System :: OS Independent
 
 [tool.poetry.dependencies]
 python = "^3.8"
