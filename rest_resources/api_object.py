@@ -93,8 +93,9 @@ IDE's autocomplete and any type inference/static analysis will just have to trus
 
 from __future__ import annotations
 
+import inspect
 from enum import Enum
-from typing import Callable, Dict, List, TypeVar, Union
+from typing import Callable, Dict, List, TypeVar, Union, Type, Optional, Any
 
 Primitive = Union[str, int, float, bool, None]
 JsonType = Union[dict, List, Primitive]
@@ -114,7 +115,7 @@ def _trivial_constructor(raw: JsonType) -> JsonType:
 class ApiObject:
     sub_resources: Dict[str, _ResourceConstructor] = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, *_, **kwargs):
         if kwargs:
             self.__dict__ = self.parse(kwargs).__dict__
 
@@ -162,7 +163,7 @@ class ApiObject:
 
     @classmethod
     def parse_collection(
-        cls, collection: List[JsonType]
+            cls, collection: List[JsonType]
     ) -> List[Union[ApiObject, Primitive]]:
         """
         Convenience function for cases where a resource has a property which is a collection of
@@ -174,7 +175,7 @@ class ApiObject:
 
     @staticmethod
     def _collection_to_raw(
-        collection: List[Union[JsonType, ApiObject]]
+            collection: List[Union[JsonType, ApiObject]]
     ) -> List[JsonType]:
         """
         Handles recursively casting lists of items to their respective JsonType
@@ -220,5 +221,92 @@ class ApiObject:
 _ResourceConstructor = Callable[
     [JsonType], Union[List[ApiObject], ApiObject, Primitive]
 ]
-RestResource = TypeVar("RestResource", JsonType, ApiObject)
-ErrorSchema = TypeVar("ErrorSchema", JsonType, ApiObject)
+RestResource = TypeVar("RestResource", bound=ApiObject)
+ErrorSchema = TypeVar("ErrorSchema", bound=ApiObject)
+
+
+def from_annotations(cls: Type[RestResource]) -> Type[RestResource]:
+    """
+    Allows the subresource parsers to be inferred from the annotations
+    on the class. This means you can define your object graph as follows.
+
+    With a resource with the following schema:
+
+        >>> resource_dict = {
+        ...     "field": 1,
+        ...     "list_field": [1, 2, 3],
+        ...     "subresource": {
+        ...         "foo": "bar"
+        ...     },
+        ...     "subresource_collection": [
+        ...         {"foo": "baz"},
+        ...         {"foo": None},
+        ...     ],
+        ... }
+
+
+    The resource defintions look like:
+
+    The subresource:
+        >>> class SubResource(ApiObject):
+        ...     foo: str
+        ...
+
+    The top level resource:
+        >>> @from_annotations
+        ... class Resource(ApiObject):
+        ...     field: int
+        ...     list_field: List[int]
+        ...     subresource: SubResource
+        ...     subresource_collection: List[SubResource]
+
+
+    :param cls: The ApiObject subclass
+    :return:
+    """
+    annotations_ = cls.__annotations__
+
+    if {str} == {type(a) for a in annotations_}:
+        # If the type of every value in the __annotations__ dict is string,
+        # then we're looking at a __future__.annotations import at the top
+        # of the file
+        annotations_ = inspect.get_annotations(cls, eval_str=True)
+
+    for name, field_type in annotations_.items():
+        is_from_typing = isinstance(field_type, type(List[Any]))
+
+        if field_type in Primitive.__args__:
+            # If the annotation is a primitive then the constructor is
+            # just the default trivial constructor.
+            pass
+
+        elif (
+                is_from_typing
+                and field_type.__args__[0] in Primitive.__args__
+        ):
+            # If the annotation is a List[str] or some other primitive
+            # then the constructor is just the trivial constructor.
+            pass
+
+        elif (
+                is_from_typing
+                and issubclass(field_type.__args__[0], ApiObject)
+        ):
+            # If the annotation is a typing.List[ApiResource]
+            # we want to pull out the specific subclass that
+            # was annotated and set the subresource constructor
+            # to be its parse function.
+            cls.sub_resources[name] = field_type.__args__[0].parse
+
+        elif isinstance(field_type, type(Optional[Any])):
+            # Since subresources aren't going to be typehinted as Optional,
+            # we can assume that the passed type is primitive
+            cls.sub_resources[name] = field_type.__args__[0]
+
+        elif isinstance(field_type(), ApiObject):
+            # If the annotation is an instance of ApiObject we
+            # want to set the subresource constructor to its parse
+            # function
+            cls.sub_resources[name] = field_type.parse
+
+    return cls
