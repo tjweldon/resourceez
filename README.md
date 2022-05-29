@@ -3,9 +3,10 @@
 ResourceEZ (reource easy) is a python library for client side parsing of
 REST API resources.
 
-It was born of my frustration with `attrs` and
-`dataclasses` both being a bit too clever for serialising/deserialising
-rest resources as a client.
+## Motivation
+
+It was born of my frustration with `attrs` and `dataclasses` both being a
+bit too clever for serialising/deserialising rest resources as a client.
 
 Often the implementation of a rest client is a crystalisation of the author(s)
 understanding of parts of the interface that they need to imlement their use
@@ -48,6 +49,8 @@ This isn't to say there's anything wrong with `attrs`; the nature of a swiss arm
 knife is that it's not a very good knife, though it's very useful to have around.
 By the same token `attrs` and `dataclasses` are very useful, they just aren't designed
 specifically around parsing rest resources.
+
+## Example
 
 So how could it be improved if rest resources is what we're working with? ResourceEZ
 aims to let you express only the parts of a resource you care about, with as little
