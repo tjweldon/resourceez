@@ -1,6 +1,9 @@
 # ResourceEZ
 
-ResourceEZ (reource easy) was born of my frustration with `attrs` and
+ResourceEZ (reource easy) is a python library for client side parsing of
+REST API resources.
+
+It was born of my frustration with `attrs` and
 `dataclasses` both being a bit too clever for serialising/deserialising
 rest resources as a client.
 
@@ -106,8 +109,9 @@ an api, need and almost nothing else.
 ## Scope
 
 Things ResourceEZ does not/will not do:
- - **Validate schema**: As a client to an upstream API, this is not your 
+
+- **Validate schema**: As a client to an upstream API, this is not your
  responsibility.
- - **Be appropriate for the server side**: ResourceEZ is supposed to be
- narrow in scope, use it for anything other than client-side rest resource 
+- **Be appropriate for the server side**: ResourceEZ is supposed to be
+ narrow in scope, use it for anything other than client-side rest resource
  parsing at your own risk.
