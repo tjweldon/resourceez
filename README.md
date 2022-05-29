@@ -2,12 +2,12 @@
 
 ResourceEZ (reource easy) was born of my frustration with `attrs` and
 `dataclasses` both being a bit too clever for serialising/deserialising
-rest resources as a client. Often the implementation of a rest client is
-a crystalisation of the author(s) understanding of parts of the interface
-that they choose to imlement their use cases.
+rest resources as a client.
 
-If the upstream API is complex or deeply nested, this kind of code can be an
-absolute nigtmare of nested dict/list access, with code like:
+Often the implementation of a rest client is a crystalisation of the author(s)
+understanding of parts of the interface that they need to imlement their use
+cases. If the upstream API is complex or deeply nested, this kind of code can
+be an absolute nigtmare of nested dict/list access, with code like:
 
 ```python
 resp = requests.get(url)
@@ -102,3 +102,12 @@ That's it. You don't even need to express the whole object graph!
 Your IDE will have accurate type inference where you care about it, and most
 importantly it's only the info that you, as somebody developing a client to
 an api, need and almost nothing else.
+
+## Scope
+
+Things ResourceEZ does not/will not do:
+ - **Validate schema**: As a client to an upstream API, this is not your 
+ responsibility.
+ - **Be appropriate for the server side**: ResourceEZ is supposed to be
+ narrow in scope, use it for anything other than client-side rest resource 
+ parsing at your own risk.
