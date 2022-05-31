@@ -94,6 +94,7 @@ IDE's autocomplete and any type inference/static analysis will just have to trus
 from __future__ import annotations
 
 import inspect
+import sys
 from enum import Enum
 from typing import Callable, Dict, List, TypeVar, Union, Type, Optional, Any
 
@@ -219,7 +220,7 @@ class ApiObject:
 
 
 _ResourceConstructor = Callable[
-    [JsonType], Union[List[ApiObject], ApiObject, Primitive]
+    [JsonType], Union[List[ApiObject], ApiObject, JsonType]
 ]
 RestResource = TypeVar("RestResource", bound=ApiObject)
 ErrorSchema = TypeVar("ErrorSchema", bound=ApiObject)
@@ -227,6 +228,8 @@ ErrorSchema = TypeVar("ErrorSchema", bound=ApiObject)
 
 def from_annotations(cls: Type[RestResource]) -> Type[RestResource]:
     """
+    WARNING: this is an experimental feature, and is not covered by tests.
+
     Allows the subresource parsers to be inferred from the annotations
     on the class. This means you can define your object graph as follows.
 
@@ -266,11 +269,16 @@ def from_annotations(cls: Type[RestResource]) -> Type[RestResource]:
     """
     annotations_ = cls.__annotations__
 
-    if {str} == {type(a) for a in annotations_}:
+    if all(type(a) == str for a in annotations_):
         # If the type of every value in the __annotations__ dict is string,
         # then we're looking at a __future__.annotations import at the top
         # of the file
-        annotations_ = inspect.get_annotations(cls, eval_str=True)
+        if sys.version_info >= (3, 10):
+            annotations_ = inspect.get_annotations(cls, eval_str=True)
+        else:
+            raise NotImplementedError(
+                "from_annotations is not compatible with __future__.annotations for python versions less than 3.10"
+            )
 
     for name, field_type in annotations_.items():
         is_from_typing = isinstance(field_type, type(List[Any]))
@@ -299,7 +307,7 @@ def from_annotations(cls: Type[RestResource]) -> Type[RestResource]:
             cls.sub_resources[name] = field_type.__args__[0].parse
 
         elif isinstance(field_type, type(Optional[Any])):
-            # Since subresources aren't going to be typehinted as Optional,
+            # Since sub-resources aren't going to be type hinted as Optional,
             # we can assume that the passed type is primitive
             cls.sub_resources[name] = field_type.__args__[0]
 

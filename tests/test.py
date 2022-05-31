@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from unittest import TestCase
 
-from rest_resources.api_object import ApiObject, Primitive
+from resourceez.api_object import ApiObject, Primitive
 
 
 class FlatResource(ApiObject):
